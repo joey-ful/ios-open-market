@@ -65,15 +65,15 @@ task.resume()
   }
   ```
 - 대신 리턴값을 사용하거나 테스트할 때에도 성공과 실패를 구분해서 값을 벗겨야 했다.
-```swift=
-case .success(let data):
-    outcome = data.title
-case .failture(let error):
-    print(error)
-case .none:
-    print("none")
-}
-```
+  ```swift
+  case .success(let data):
+      outcome = data.title
+  case .failture(let error):
+      print(error)
+  case .none:
+      print("none")
+  }
+  ```
 
 ### 비동기 Unit Test
 - XCTTestExpection을 생성한다.
@@ -81,29 +81,29 @@ case .none:
 - 비동기 작업을 호출한 함수에서는 `wait(for: [expectation], timeout: 5.0)` 로 expectation이 충족되기를 기다린다.
   - expectation이 fulfill되거나 5초가 지날 때까지 기다린다.
   - 혹시 비동기 작업이 너무 오래 걸리면 기다리지 않는다. 시간을 정해두면 비동기 작업에 실패하는 경우 5초를 초과하여 기다리지 않아도 되는 이점이 있다.
-```swift=
-// given
-let urlString = MockURL.mockItem.description
-let url = try XCTUnwrap(URL(string: urlString))
-var outcome: String?
-let expectation = XCTestExpectation(description: expectationDescription)
-let expectedValue = "MacBook Pro"
+  ```swift
+  // given
+  let urlString = MockURL.mockItem.description
+  let url = try XCTUnwrap(URL(string: urlString))
+  var outcome: String?
+  let expectation = XCTestExpectation(description: expectationDescription)
+  let expectedValue = "MacBook Pro"
 
-// when
-sutNetworkManager?.fetchData(url: url) { (result: Result<Item, Error>) in
-    switch result {
-    case .success(let data):
-        outcome = data.title
-    default:
-        XCTFail()
-    }
-    expectation.fulfill()
-}
-wait(for: [expectation], timeout: 5.0)
+  // when
+  sutNetworkManager?.fetchData(url: url) { (result: Result<Item, Error>) in
+      switch result {
+      case .success(let data):
+          outcome = data.title
+      default:
+          XCTFail()
+      }
+      expectation.fulfill()
+  }
+  wait(for: [expectation], timeout: 5.0)
 
-// then
-XCTAssertEqual(outcome, expectedValue)
-```
+  // then
+  XCTAssertEqual(outcome, expectedValue)
+  ```
 
 
 ## main 브랜치 - 개인적으로 진행중(미완)
@@ -219,39 +219,39 @@ func deleteData(url: URL, parameters: [String:String]) {
 
 - 토글 버튼을 만들어 UICollectionViewFlowLayout 의 스크롤 방향이 세로/가로로 변경되도록 구현했다.
   - 그리고 `performBatchUpdates()`로 애니메이션 효과를 추가했다.
-```swift=
-guard let layout = listCollectoinView.collectionViewLayout as? UICollectionViewFlowLayout else { return }
+  ```swift
+  guard let layout = listCollectoinView.collectionViewLayout as? UICollectionViewFlowLayout else { return }
 
-listCollectoinView.performBatchUpdates({
-    layout.scrollDirection = (layout.scrollDirection == .vertical) ? .horizontal : .vertical
-}, completion: nil)
-```
+  listCollectoinView.performBatchUpdates({
+      layout.scrollDirection = (layout.scrollDirection == .vertical) ? .horizontal : .vertical
+  }, completion: nil)
+  ```
 
 - 스크롤방향이 변경될 때마다 셀 크기도 새로 계산해줬다.
 
-```swift=
-func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-    guard let layout = collectionViewLayout as? UICollectionViewFlowLayout else { return CGSize.zero }
-        
-    let verticalNumberOfItems: CGFloat = 12
-    let horizontalNumberOfItems: CGFloat = 2
-    let bounds = collectionView.bounds
-    let contentWidth = bounds.width - (layout.sectionInset.left + layout.sectionInset.right)
-    let contentHeight = bounds.height - (layout.sectionInset.top + layout.sectionInset.bottom)
-    var width: CGFloat
-    var height: CGFloat
+  ```swift
+  func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+      guard let layout = collectionViewLayout as? UICollectionViewFlowLayout else { return CGSize.zero }
 
-    switch layout .scrollDirection {
-    case .vertical:
-        width = contentWidth
-        height = (contentHeight - (layout.minimumLineSpacing * (verticalNumberOfItems - 1))) / verticalNumberOfItems
-    case .horizontal:
-        width = (contentWidth - (layout.minimumLineSpacing * (horizontalNumberOfItems - 1))) / horizontalNumberOfItems
-        height = width * 2 / 3
-    @unknown default:
-        fatalError()
-    }
+      let verticalNumberOfItems: CGFloat = 12
+      let horizontalNumberOfItems: CGFloat = 2
+      let bounds = collectionView.bounds
+      let contentWidth = bounds.width - (layout.sectionInset.left + layout.sectionInset.right)
+      let contentHeight = bounds.height - (layout.sectionInset.top + layout.sectionInset.bottom)
+      var width: CGFloat
+      var height: CGFloat
 
-    return CGSize(width: width, height: height)
-}
-```
+      switch layout .scrollDirection {
+      case .vertical:
+          width = contentWidth
+          height = (contentHeight - (layout.minimumLineSpacing * (verticalNumberOfItems - 1))) / verticalNumberOfItems
+      case .horizontal:
+          width = (contentWidth - (layout.minimumLineSpacing * (horizontalNumberOfItems - 1))) / horizontalNumberOfItems
+          height = width * 2 / 3
+      @unknown default:
+          fatalError()
+      }
+
+      return CGSize(width: width, height: height)
+  }
+  ```       
