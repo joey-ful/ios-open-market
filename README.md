@@ -109,7 +109,7 @@ task.resume()
 ## main 브랜치 - 개인적으로 진행(미완)
 
 ### POST
-<img src="https://user-images.githubusercontent.com/52592748/129998540-b7da45cd-c37e-4352-942c-78061926e0b1.gif" width="400"/>
+<img src="https://user-images.githubusercontent.com/52592748/129999732-19455643-cb5e-4daf-a5f1-6c813b3efede.gif" width="400"/>
 
 - POST와 PATCH 메서드로 상품을 등록/수정하기 위해서 multipart/form-data 를 활용했다.
 - 사용자가 실제로 사용할 수 있는 메서드는 POST만 구현했다.
