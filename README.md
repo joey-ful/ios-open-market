@@ -106,7 +106,7 @@ task.resume()
   ```
 
 
-## main 브랜치 - 개인적으로 진행중(미완)
+## main 브랜치 - 개인적으로 진행(미완)
 
 ### POST
 <img src="https://user-images.githubusercontent.com/52592748/129998540-b7da45cd-c37e-4352-942c-78061926e0b1.gif" width="400"/>
@@ -119,8 +119,10 @@ task.resume()
   - 필수 항목을 모두 기입하고 `등록` 버튼을 누르면 콘솔에 response가 출력된다
   - response가 반환하는 id 번호를 다음과 같이 url뒤에 붙인 주소로 이동을 한다
   - `https://camp-open-market-2.herokuapp.com/item/538`
-    ![image](https://user-images.githubusercontent.com/52592748/129998980-dbb96f48-b858-47fc-b8ea-984e1588fc01.png)
+  
+  ![image](https://user-images.githubusercontent.com/52592748/129998980-dbb96f48-b858-47fc-b8ea-984e1588fc01.png)
   - 웹에서 등록된 상품을 확인할 수 있다
+ 
   ![image](https://user-images.githubusercontent.com/52592748/129999103-bac84548-7eb2-4a5d-86b5-7c7556f9b77f.png)
 
 
