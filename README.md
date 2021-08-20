@@ -8,8 +8,8 @@
 ### Mock 객체
 #### Mock 객체의 필요성
 - 네트워크 통신을 하기 위해 URLSession의 `dataTask(with:completionHandler:)` 메서드를 사용했다. 하지만 서버가 아직 만들어지지 않았거나 당장 인터넷 통신이 불가한 경우 등을 대비해 실제 메서드 대신 mock 객체의 메서드를 활용해 데이터를 받아오는 방법을 구현했다.
-  - URLSession을 mocking한 MockURLSesssion 객체를 구현했다.
-  - 두 객체를 추상화한 URLSessionProtocol을 구현하고 requirement로 URLSession의 메서드인 `dataTask(with:completionHandler:)` 선언했다.
+  - URLSession을 mocking한 MockURLSesssion 타입을 구현했다.
+  - 두 타입을 추상화한 URLSessionProtocol을 구현하고 requirement로 URLSession의 메서드인 `dataTask(with:completionHandler:)` 선언했다.
  
 #### 의존성 주입
  - 네트워크 통신을 하는 타입은 URLSession과 MockURLSession을 추상화한 타입을 가지고 있어야 하며 이는 둘 중 어느 것이든 될 수 있기 때문에 인스턴스를 외부에서 주입하는 방식으로 구현했다.
@@ -22,7 +22,7 @@
       }
   }
   ```
-#### Mock 객체는 실제 객체와 흡사하게 구현
+#### Mock 객체는 실제와 흡사하게 구현
 - 그리고 실사용은 주입받은 객체가 무엇인지 관계없이 그대로 `dataTask(with:completionHandler:)` 메서드를 사용한다
 ```swift
 let task: URLSessionDataTaskProtocol = session
