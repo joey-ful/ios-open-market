@@ -23,7 +23,7 @@ class ItemsListViewController: UIViewController {
         
         guard let url = urlComponents?.url else { return }
 
-        manager.fetchData(url: url) { (result: Result<Page, Error>) in
+        manager.sendRequest(httpRequest: HTTPRequest.get, url: url, withParameters: nil, images: nil) { (result: Result<Page, Error>) in
             switch result {
             case .success(let decodedData):
                 self.items = decodedData.items

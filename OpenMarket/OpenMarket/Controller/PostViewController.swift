@@ -40,7 +40,7 @@ class PostViewController: UIViewController {
 
         let url = URL(string: "https://camp-open-market-2.herokuapp.com/item")!
 
-        var parametersChoco: [String : Any] = [
+        var parameters: [String : Any] = [
             "title": title,
             "descriptions": descriptions,
             "price": price,
@@ -50,12 +50,23 @@ class PostViewController: UIViewController {
         ]
 
         if let discountedPriceString = discountedPriceTextField.text, let discountedPrice = Int(discountedPriceString) {
-            parametersChoco["discounted_price"] = Int(discountedPrice)
+            parameters["discounted_price"] = Int(discountedPrice)
         }
 
         guard let imageFile = Media(withImage: #imageLiteral(resourceName: "lego"), forKey: "images[]") else { return }
+        let httpRequestType = HTTPRequest.post
 
-        manager.postData(url: url, parameters: parametersChoco, images: [imageFile])
+        manager.sendRequest(httpRequest: httpRequestType,
+                            url: url,
+                            withParameters: parameters,
+                            images: [imageFile]) { (result: Result<Item, Error>) in
+            switch result {
+            case .success(let decodedData):
+                print(decodedData)
+            case .failure(let error):
+                print(error)
+            }
+        }
         
         dismiss(animated: true, completion: nil)
     }
