@@ -8,6 +8,7 @@
 import UIKit
 
 class ListItemCell: UICollectionViewListCell, ItemCell {
+    var urlString: String?
     @IBOutlet weak var thumbnailImageView: UIImageView!
     @IBOutlet weak var titleLabel: UILabel!
     @IBOutlet weak var priceLabel: UILabel!
@@ -20,7 +21,7 @@ class ListItemCell: UICollectionViewListCell, ItemCell {
         stockLabel.text = "0"
     }
     
-    func updateContent(at indexPath: IndexPath, items: [Page.Item]?, collectionView: UICollectionView) {
+    func updateContent(at indexPath: IndexPath, items: [Page.Item]?) {
         
         self.accessories = [.disclosureIndicator()]
         guard let item = items?[indexPath.item] else { return }
@@ -29,7 +30,7 @@ class ListItemCell: UICollectionViewListCell, ItemCell {
         let imageURLString = item.thumbnails[0]
         guard let imagePath = URL(string: imageURLString) else { return }
         ImageLoader.shared.loadImage(from: imagePath, at: self) { imageData in
-            if indexPath == collectionView.indexPath(for: self) {
+            if self.urlString == imageURLString {
                 self.thumbnailImageView.image = imageData
             }
         }

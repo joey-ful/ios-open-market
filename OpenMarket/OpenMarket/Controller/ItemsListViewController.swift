@@ -11,6 +11,8 @@ class ItemsListViewController: UIViewController {
     private var items: [Page.Item]?
     @IBOutlet weak var listCollectionView: UICollectionView!
     
+    var gridLayout = UICollectionViewFlowLayout()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         initializeItemsList(at: 1)
@@ -65,7 +67,8 @@ extension ItemsListViewController: UICollectionViewDataSource {
             return UICollectionViewCell()
         }
         
-        cell.updateContent(at: indexPath, items: items, collectionView: collectionView)
+        cell.urlString = items?[indexPath.item].thumbnails[0]
+        cell.updateContent(at: indexPath, items: items)
         return cell
     }
 }

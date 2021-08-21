@@ -14,5 +14,5 @@ protocol ItemCell {
     var stockLabel: UILabel! { get set }
     
     
-    func updateContent(at indexPath: IndexPath, items: [Page.Item]?, collectionView: UICollectionView)
+    func updateContent(at indexPath: IndexPath, items: [Page.Item]?)
 }
