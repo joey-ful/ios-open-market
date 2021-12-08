@@ -1,5 +1,9 @@
 👆🏻 여기 햄버거를 눌러 목차를 확인하세요
 
+<details>
+<summary> <b> 한국어 README.md 보기 </b> </summary>
+<div markdown="1">
+
 # 오픈마켓 프로젝트
 
 #### 프로젝트 기간 - 2021.08.09 - 2021.08.27
@@ -551,87 +555,577 @@ URLCache는 request, response를 키값 형태로 저장하기 때문에 이미�
 
 `isNotLoading` Bool타입 프로퍼티를 이용해 현재 추가적인 데이터를 더 로딩중인지 아닌지를 체크하고, `indexPath.row`가 전체 데이터보다 4개정도 적을 때 data를 추가로 fetch하도록 `loadMoreData()` 메서드를 구현했다.
 
----
+</div>
+</details>
+<br>
+  
+# OpenMarket Project
 
-### UIActivityIndicator
+#### Period - 2021.08.09 - 2021.08.27
 
-- 작업이 진행 중일때 보여줄 수 있는 뷰이다. UIKit에 들어 있다.
-- `startAnimating()`으로 시작되게 할 수 있고, `stopAnimating()`으로 멈추게 할 수 있다. 
-- `hideWhenStopped` 프로퍼티를 `true`로 설정하면 통해 멈췄을 때 숨겨지도록 할 수 있다.
+#### Team - [Joey](https://github.com/joey-ful), [Soll](https://github.com/soll4u)
 
-스토리보드에서 Activity Indicator View를 추가하고 IBOutlet으로 View contoller와 연결했다. 앱을 처음 실행하자마자 컬렉션 뷰를 로딩하기 위해 기다려야 하므로 스토리보드에서 Attributes inspector - Behavior의 Animating을 체크해주었다.
 
-![image](https://user-images.githubusercontent.com/52592748/130813203-fd745b8b-90a2-4663-90a8-eab8ca38f491.png)
+## Step1 - Networking type
 
-Indicator가 사라지는 시점은 data의 첫번째 로딩이 완료된 시점이라고 생각했다. Data가 fetch 된 후 collection view를 `reloadData()`하고 `stopAnimating()` 을 호출했다.
+### Mock Class
 
----
+#### Why mock a class?
 
-### NumberFormatter currency
-이번 프로젝트에서 화폐 단위를 ISO4217 코드로 표기했다. 달러는 USD, 원화는 KRW 코드로 표기하는 것이다. NumberFormatter에 ISO4217 코드를 지정하면 numberStyle에 따라 코드가 출력되기도 하고 심볼이 출력되기도 했다.
+URLSession's `dataTask(with:completionHandler:)` is used to retrieve data through network communication. However, in case of lack of server or internet connection the view should be filled with dummy data stored locally. And this data is retrieved by a Mock calss of URLSession through its `dataTask(with:completionHandler:)` method.
 
-- currencyCode를 원화를 나타내는 KRW 코드로 지정
+- MockURLSession mimics the behavior of URLSession. The application can simply substitute URLSessionwith MockURLSession to mimic data fetching process.
+- To group these classes, an Interface called URLSessionProtocol is declared. This protocol declares a `dataTask(with:completionHandler:)` function. 
 
-```swift
-let numberFormatter = NumberFormatter()
-numberFormatter.currencyCode = "KRW"
-```
+#### Dependency Injection
 
-#### numberStyle `.currencyISOCode`
-금액 앞에 `KRW` 이 붙는다. 알아서 decimal 스타일이 적용된다
+- URLSessionProtocol type is initialized through dependency injection since it can either be URLSession or MockURLSession.
 
-```swift
-numberFormatter.numberStyle = .currencyISOCode
-let a = numberFormatter.string(from: 1234567)
-// KRW 1,234,567
-```
+  ```swift
+  struct NetworkManager {
+      let session: URLSessionProtocol
+    
+      init(session: URLSessionProtocol) {
+          self.session = session
+      }
+  }
+  ```
 
-#### numberStyle `.currency`
-금액 앞에 `₩` 심볼이 붙는다. 알아서 decimal 스타일이 적용된다
-```swift
-numberFormatter.numberStyle = .currency
-let b = numberFormatter.string(for: 1234567)
-// ₩1,234,567
-```
+#### Mock class behaving like a real class
 
----
-
-### NSAttributedString
-
-- 텍스트 일부에 대한 관련 속성(예: 스타일, 하이퍼링크, 접근성 데이터 등)이 있는 문자열이다.
-- 이 객체는 개별 문자열 또는 문자열의 범위에 적용되는 속성(예: 글꼴, 커닝)에 관한 세트를 관리한다.
-
-#### NSAttributedString.Key
-속성 문자열의 텍스트에 적용할 수 있는 속성이다.
-attachment, backroundColor, font, forgroundColor, shadow 등의 프로퍼티를 갖고 있다.
-
+- A networking type uses `dataTask(with:completionHandler:)` method to fetch data regardless of which subclass of URLSessionProtocol is injected.
 
 ```swift
-let attributes: [NSAttributedString.Key: Any] = [
-    .foregroundColor: UIColor.red,
-    .strikethroughStyle: true
-]
-
-self.label.attributedText = NSAttributedString(string: "Hello", attributes: attributes)
-
+let task: URLSessionDataTaskProtocol = session
+    .dataTask(with: request) { data, urlResponse, error in
+        //...
+    }
+task.resume()
 ```
-위의 코드는 label에 Hello 문자열을 넣고, 빨간색의 취소선이 그어져 있는 attributedText를 적용한다.
+
+- To achieve this behavior, Mock class should return data depending on the parameters of `dataTask(with:completionHandler:)`. 
+- There are two sorts of data in this application; Items and Item. The local address of data is passed as the url of the data and the Mock class returns dummy data accordingly. It behaves as if the network has failed if the data address is invalid.
+
+#### URLSessionDataTask
+
+- `dataTask(with:completionHandler:)` method returns URLSessionDataTask type. However, MockURLSession's method returns MockURLSessionDataTask.
+
+  - It was necessary to override URLSessionDataTask's `resume()` method
+  - However, URLSessionDataTask's init() has been deprecated and thus seemed inappropriate to inherit from.
+  - So we declared a protocol called URLSessionDataTaskProtocol that groups URLSessionDataTask and MockURLSessionDataTask
+  - Since `dataTask(with:completionHandler:)` of URLSession and MockURLSession are different, URLSessionProtocol now declares `dataTaskWithRequest(with:completionHandler)` function that returns URLSessionDataTaskProtocol type so that both the mocking class and the actual class returns the same type.
+
+  ```swift
+  protocol URLSessionProtocol {
+      func dataTaskWithRequest(with request: URLRequest, completionHandler: @escaping (Data?, URLResponse?, Error?) -> Void)
+    -> URLSessionDataTaskProtocol
+      }
+  
+  extension URLSession: URLSessionProtocol {
+      func dataTaskWithRequest(with request: URLRequest, completionHandler: @escaping (Data?, URLResponse?, Error?) -> Void)
+    -> URLSessionDataTaskProtocol {
+          dataTask(with: request, completionHandler: completionHandler) as URLSessionDataTaskProtocol
+          }
+      }
+  ```
 
 ---
 
-### isHidden
+### Using a Result Type
 
-- 뷰가 숨겨져 있는지 여부를 결정하는 Bool 값이다.
-- true로 설정하면 receiver가 숨겨지고, false로 설정하면 receiver가 표시된다. 기본값은 false이다.
-- 숨겨진 view는 window에서 사라지고 입력 이벤트를 수신하지 않는다. 하지만 superview의 subview목록에 남아있고, 오토리사이징에 관여한다.
-- 숨겨지면 자손 하위뷰들도 숨기는 효과가 있다.
+- Used Result Type as the return type of functions to be tested
 
-코드에 적용하면서 `discountedPrice` 값이 nil이면 해당 UILabel을 숨겨야 했다. stack view를 이용해 label들을 배치해놓고 `discountedPriceLabel`의 `isHidden`을 true로 바꾸니 text만 사라지는 것이 아니라 view가 완전히 사라진 것을 볼 수 있었다.
+  ```swift
+  case .success(let decodedData):
+      completion(.success(decodedData))
+  case .failure(let error):
+      completion(.failure(error))
+  }
+  ```
 
-![image](https://user-images.githubusercontent.com/52592748/130813360-29169f35-efb5-47e1-b043-553951fc7a3b.png)
+- Since the return type holds different values for differente Result cases, it was necessary to unwrap return values as follows.
 
-스토리보드
+  ```swift
+  case .success(let data):
+      outcome = data.title
+  case .failture(let error):
+      print(error)
+  case .none:
+      print("none")
+  }
+  ```
 
-![image](https://user-images.githubusercontent.com/52592748/130813387-390b4aeb-2753-4bd3-a885-02c3b7b22c40.png)
+---
 
-실제 데이터 반영
+### Asynchronous Unit Test
+
+- To test an asynchronous function it is necessary to notify when the function returns.
+
+- XCTTestExpection was created before calling the function to be tested.
+
+- Its `fulfill()` method was used to notify the end of the asynchronous process.
+
+- The `wait(for: [expectation], timeout: 5.0)` waits for the expectation to `fulfill()`
+
+  - Wait until the expectation is fulfilled or 5 seconds passes
+  - By setting timeout we only wait for 5 seconds when the asynchronous job fails.
+
+  ```swift
+  // given
+  let urlString = MockURL.mockItem.description
+  let url = try XCTUnwrap(URL(string: urlString))
+  var outcome: String?
+  let expectation = XCTestExpectation(description: expectationDescription)
+  let expectedValue = "MacBook Pro"
+  
+  // when
+  sutNetworkManager?.fetchData(url: url) { (result: Result<Item, Error>) in
+      switch result {
+      case .success(let data):
+          outcome = data.title
+      default:
+          XCTFail()
+      }
+      expectation.fulfill()
+  }
+  wait(for: [expectation], timeout: 5.0)
+  
+  // then
+  XCTAssertEqual(outcome, expectedValue)
+  ```
+
+### multipart/form-data
+
+To send POST or PATCH requests the httpBody's content had to be of multipart/form-data type.
+
+#### Compared to application/x-www-form-urlencoded type (title=choco, price=9000)
+
+> [stackoverflow](https://stackoverflow.com/questions/3508338/what-is-the-boundary-in-multipart-form-data)
+
+- `aplication/x-www-form-urlencoded` 
+
+  ```json
+  title=choco&price=9000
+  ```
+
+- `multipart/form-data` 
+
+  [multipart/form-data](https://developer.mozilla.org/en-US/docs/Web/API/FormData) also represents data in a key-value format
+
+  ```json
+  --XXX
+  Content-Disposition: form-data; name="title"
+  
+  choco
+  --XXX
+  Content-Disposition: form-data; name="price"
+  
+  9000
+  --XXX--
+  ```
+
+#### Boundary
+
+httpBody and the data it contains are all wrapped by boundaries
+
+- Boundary is a unique string that identifies an httpBdy
+- The same request's httpBody has to use the same Boundary to mark the beginning and the end
+- A unique string can be generated through UUIDString `"Boundary-\(UUID().uuidString)"`
+
+```json
+--Boundary-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+Content-Disposition: form-data; name=\"title\"
+
+choco
+--Boundary-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+Content-Disposition: form-data; name=\"price\"
+
+9000
+--Boundary-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX--
+```
+
+#### Printing httpBody
+
+- Decoding httpBody
+
+```swift
+String(decoding: request.httpBody!, as: UTF8.self)
+```
+
+- Output
+  - httpBody contatins three data - `title: choco`, `price: 9000`, `image: jpeg file`
+  - Image data is unreadable to human
+
+```json
+--Boundary-265B324D-9628-4D91-AC7A-31C6E93020B7
+Content-Disposition: form-data; name="title"
+
+choco
+--Boundary-265B324D-9628-4D91-AC7A-31C6E93020B7
+Content-Disposition: form-data; name="price"
+
+9000
+--Boundary-265B324D-9628-4D91-AC7A-31C6E93020B7
+Content-Disposition: form-data; name="images[]"; filename="photo1602058207.jpeg"
+Content-Type: image/jpeg
+
+// Image Data
+// ���J�;ى�	;�Ȧ8@#?N��.w?\����Q�Lcp��������� and so on
+--Boundary-265B324D-9628-4D91-AC7A-31C6E93020B7--
+```
+
+---
+
+### application/json content-type
+
+DELETE request's httpBody was of application/json content-type
+
+- httpBody is of Data type so parameters of dictionary type is encoded to Data type
+
+> [StackOverflow](https://stackoverflow.com/questions/49683960/http-request-delete-and-put)
+
+```swift
+func deleteData(url: URL, parameters: [String:String]) {
+    var request = URLRequest(url: url)
+    request.httpMethod = "DELETE"
+    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+    let dataBody = try? JSONSerialization.data(withJSONObject: parameters, options: [])
+    request.httpBody = dataBody!
+    
+    sessionDataTaskAndPrintResults(with: request)
+}
+```
+
+---
+
+### Decoding Function - Decodable's extension
+
+Instead of creating a Decoding type or creating a decoding function in the main logic, we added a decoding method in Decodable's extension. 
+
+- Decodable types now have a decoding method. There is no need to create a JSONDecoder() instance or a decoding type's instance. 
+- Data doesn't need to be passed as parameters because the decoding method decodes the data itself.
+
+```swift
+// data: Decodable
+let parsedResult = data.parse(type: T.self)
+```
+
+- Decoding method `parse<T>(type:)`
+
+```swift
+extension Decodable {
+    func parse<T: Decodable>(type: T.Type) -> Result<T, Error> {
+        let decoder = JSONDecoder()
+        if let data = self as? Data,
+           let decodedData = try? decoder.decode(type, from: data) {
+            return .success(decodedData)
+        }
+        return .failure(NetworkError.failToDecode)
+    }
+}
+```
+
+
+## Step2 - Product List Screen
+
+### UICollectionView
+
+The goal was to display two custom cells per row in UICollectionView. `items` model data is fetched through NetworkManager and updated in the main thread. 
+
+<img src="https://user-images.githubusercontent.com/52592748/130812553-d3137c84-0c3f-433d-98e0-24644753aed6.png" width="300"/>
+
+---
+
+### Lazy Loading
+
+Lazy Loading was applied when downloading cell images to improve performance by delaying load. `collectionView(_:cellForItemAt:)` dequeues a cell and updates image through ImageLoader.
+
+<details>
+<summary> <b> ImageLoader Code </b>  </summary>
+<div markdown="1">
+ImageLoader either finds an image in its cache or downloads and then updates it in the main thread.
+
+
+```swift
+class ImageLoader {
+    
+    static let shared = ImageLoader()
+    let cache = URLCache.shared
+    
+    private init() {}
+    
+    func loadImage(from urlString: String,
+                   completion: @escaping (UIImage) -> Void) {
+        
+        guard let url = URL(string: urlString) else { return }
+        let request = URLRequest(url: url, cachePolicy: .returnCacheDataElseLoad)
+        
+        if let response = self.cache.cachedResponse(for: request),
+           let imageData = UIImage(data: response.data) {
+            DispatchQueue.main.async {
+                completion(imageData)
+            }
+        } else {
+            URLSession.shared.dataTask(with: url) { data, response, error in
+                guard error == nil else { return }
+                guard let response = response,
+                      let statusCode = (response as? HTTPURLResponse)?.statusCode,
+                      (200...299).contains(statusCode) else { return }
+                guard let data = data else { return }
+                
+                guard let imageData = UIImage(data: data) else { return }
+                
+                self.cache.storeCachedResponse(CachedURLResponse(response: response, data: data), for: request)
+                
+                DispatchQueue.main.async {
+                    completion(imageData)
+                }
+            }.resume()
+        }
+    }
+}
+```
+
+</div>
+</details>
+<br>
+
+Downloading an image is an asynchronous task that may take quite a while. If the user scrolls the screen before images are updated then cells have to display different images.
+
+⚠️ In this case, the cell may update its former image and then change it to the new image. In the worst case scenario, the cell may finally display its former image instead of the currently requested one.
+
+To solve these problems images had to be updated only when the requesting cell and the to be displayed cell's information matches.
+
+#### Logic1 - comparing indexPath
+
+The first solution was to compare the cell's indexPath when it has been dequed and its indexPath when the download has been completed.
+
+```swift
+// self = cell
+ImageLoader.shared.loadImage(from: currentURLString) { imageData in
+    if indexPath == collectionView.indexPath(for: self) {
+        self.thumbnailImageView?.image = imageData
+    }
+}
+```
+
+
+⚠️ However this logic caused an unexpected behavior when the collectionView's Estimated Size was set to None.
+
+- The collectionView's cell size is calculated either in UICollectionViewFlowLayout's `collectionView(_:layout:sizeForItemAt:` or using the `itemSize` property. And the collectionView's Estimated Size has to be set to None for the cell size to be applied in both cases.
+- However cells who completed image downloads had nil indexPaths when checked like so `collectionView.indexPath(for: self)`.
+- This seemed to be due to cell prefetching.
+
+#### Logic2 - comparing a unique property of the cell
+
+Instead of comparing cells' indexPaths, the second logic compares cells' properties. To check whether the image should be updated or not an image's url path was added as the cell's property. Only if the cell's image url path matches is the image updated.
+
+```swift
+// self = cell
+ImageLoader.shared.loadImage(from: currentURLString) { imageData in
+    if self.urlString == currentURLString {
+        self.thumbnailImageView?.image = imageData
+    }
+}
+```
+
+---
+
+### itemSize vs collectionView(_:layout:sizeForItemAt:)
+
+#### Caculating item size of UICollectionView
+
+1. `UICollectionViewDelegateFlowLayout`'s `collectionView(_:layout:sizeForItemAt:)` method - It is used to set various cell sizes
+2. `UICollectionViewFlowLayout`'s `itemSize` property - It is used to set a single cell size which is set to a default value of (50.0, 50.0)
+
+```swift
+extension ItemsGridViewController: UICollectionViewDelegateFlowLayout {
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+        
+        // setting itemSize
+        
+        return CGSize(width: cellWidth, height: cellHeight)
+    }
+}
+```
+
+
+#### Different Number of columns in small simulator devices
+
+<img src="https://user-images.githubusercontent.com/52592748/130812437-eed85ccd-abe5-4605-8ec8-7177bfafaa98.png" width="300"/>
+
+Our goal was to display two items in a row. Since all our cells had the same size we set its size using `UICollectionViewFlowLayout`'s `itemSize` property. In doing so, we calculated the cell size by dividing the width of UICollectionView.
+
+```swift
+let itemSize = (collectionViewWidth - sectionInset) / 2
+```
+
+However when the storyboard's device was different from the simulator's device, the collectionView's width was firstly set to the width of the storyboard's device. When the storyboard had iPhone11 and the simulator had iPhone SE as their devices thre results were as follows. 
+
+```
+(lldb) po (collectionView.collectionViewLayout as! UICollectionViewFlowLayout).itemSize
+▿ (194.0, 329.8)
+  - width : 194.0
+  - height : 329.8
+
+(lldb) po collectionView.bounds.width
+414.0
+```
+
+##### Solution using `layoutIfNeeded()`
+
+`layoutSubViews()` - method that  updates the View. It is called by the system and there are several ways to call it.
+
+`layoutIfNeeded()` - method that calls `layoutSubViews()` and updates the view immediately. It's often used in animation.
+
+```swift
+func configureItemSize() -> UICollectionViewFlowLayout {
+    collectionView.layoutIfNeeded() // updates the view
+    
+    // setting itemSize
+    
+    layout.itemSize = CGSize(width: cellWidth, height: cellHeight)
+    
+    return layout
+}
+```
+
+---
+
+### NSCache
+
+Some data are very expensive to download. If they are only needed temporarily it get even more expensive. To reduce cost, we saved image files to NSCache in url-UIImage as the key-value pair.
+
+#### NSCache's advantages
+
+- According to some references, NSCache partially empties itself when it is short of memory. This ensures that NSCache doesn't take up too much memory.
+- NSCache is thread-safe so it is safe to add or erase items in a multi-thread environment.
+- Unlike NSMutableDictionary it does not copy items when caching it.
+
+> Reference
+> [To `NSCache` or not to `NSCache`, what is the `URLCache`](https://medium.com/@master13sust/to-nscache-or-not-to-nscache-what-is-the-urlcache-35a0c3b02598)
+> [Swift: Loading Images Asynchronously and storing with NSCache and NSURLCache](https://www.youtube.com/watch?v=BIgqHLTZ_a4)
+
+### NSCache vs URLCache
+
+URLCache caches URL requests so we thought it was a better fit for caching images that are downloaded online. The reference states that URLCache is better for some reasons:
+
+- NSCache does empty some memory but it is still required to flush memory through `didReceiveMemoryWarning()`
+
+- NSCache's memory clearing algorithm is not structured.
+- URLCache is more flexible because it is both in-memory and on-disk cache.
+  - In-memory and on-disk differ in three categories: speed, capacity, volatility
+    - **speed** - `in-memory` database save all its data to the main memory so its reading and updating processes are much faster because there is no need of I/O tasks.
+    - **capacity** - `in-memory` database's capacity is limited to the main memory capacity
+    - **volatility** - `in-memory` can either be volatile or non volatile but `on-disk` is always non volatile.
+
+> Reference
+> [To `NSCache` or not to `NSCache`, what is the `URLCache`](https://medium.com/@master13sust/to-nscache-or-not-to-nscache-what-is-the-urlcache-35a0c3b02598)
+> [Swift: Loading Images Asynchronously and storing with NSCache and NSURLCache](https://www.youtube.com/watch?v=BIgqHLTZ_a4)
+
+#### Performance
+
+To check if URLCache works as well as NSCache we tested it by caching big images of average size 2MB. To sum up, NSCache worked fine while URLCache had low performance issues even though it did cache images.
+
+| NSCache                                                      | URLCache                                                     |
+| ------------------------------------------------------------ | ------------------------------------------------------------ |
+| <img src="https://user-images.githubusercontent.com/52592748/130787527-ec399933-7ab7-4519-b0f2-019cab06d6d3.gif"/> | <img src="https://user-images.githubusercontent.com/52592748/130786012-d97761de-741b-43e3-b38e-ef1300700313.gif"/> |
+
+
+
+<details>
+<summary> <b> Imeplementing URLCache </b>  </summary>
+<div markdown="1">
+
+
+#### URLCache capacity
+
+The default URLCache capacity is not so big.
+
+```swift
+URLCache.shared.memoryCapacity
+URLCache.shared.diskCapacity
+// URLSession.shared.configuration.urlCache?.memoryCapacity
+// URLSession.shared.configuration.urlCache?.diskCapacity
+```
+
+To cache all the images it is necessary to increase URLCache capacity. We set both memoryCapacity and diskCapacity to 500MB. Images are cached to both memories if both have space.
+
+- We didn't spot any particular difference when caching to both memory and disk.
+
+```swift
+URLCache.shared = {
+    let cacheDirectory = (NSSearchPathForDirectoriesInDomains(.cachesDirectory, .userDomainMask, true)[0] as String).appendingFormat("/\(Bundle.main.bundleIdentifier ?? "cache")/" )
+
+    return URLCache(memoryCapacity: 500*1024*1024,
+                    diskCapacity: 500*1024*1024,
+                    diskPath: cacheDirectory)
+}()
+```
+
+This can either be done in AppDelegate.swift's `application(_:didFinishLaunchingWithOptions:)` or in a relevant type like a networking type.
+
+#### URLCache usage
+
+URLCache provides methods to read and save data.
+
+```swift
+// reading response
+if let data = cache.cachedResponse(for: request)?.data {}
+
+// storing response
+self.cache.storeCachedResponse(CachedURLResponse(response: response, data: data), for: request)
+```
+
+![image](https://user-images.githubusercontent.com/52592748/130792567-bd20c890-b4d8-46c2-b314-3c87bac6de8a.png)
+
+- Code sample
+
+  ```swift
+  if let data = cache.cachedResponse(for: request)?.data,
+     let imageData = UIImage(data: data) {
+         DispatchQueue.main.async {
+             completion(imageData)
+         }
+  } else {
+      URLSession.shared.dataTask(with: url) { data, response, error in
+          // ...
+          guard let data = data else { return }
+          guard let imageData = UIImage(data: data) else { return }
+             self.cache.storeCachedResponse(CachedURLResponse(response: response, data: data), for: request)
+             // ...
+      }.resume()
+  }
+  ```
+
+- However if we use a custom URLSession by setting up configuration data is automatically cached and read without the former processes.
+
+  ```swift
+  private let customURLSession: URLSession = {
+      URLCache.shared.memoryCapacity = 512 * 1024 * 1024
+      let config = URLSessionConfiguration.default
+      config.requestCachePolicy = .returnCacheDataElseLoad
+      return URLSession(configuration: config)
+  }()
+  
+  customURLSession.dataTask(with: url) { data, response, error in
+      // ...
+  }
+  ```
+
+</div>
+</details>
+<br>
+
+Images did not show quickly and the scroll wasn't working right when using URLCache. Caching was done because URLCache's disk usage did go up as images piled up and images were gotten from the cache once stored. Since there was no problem with caching we thought it was a lot of burden to convert data to UIImage type. 
+
+---
+
+### Infinite scrolling
+
+<img src="https://user-images.githubusercontent.com/52592748/130784840-30002440-a81e-47f3-830a-739efa933333.gif" width="300"/>
+
+- UICollectionView calls `collectionView(_:willDisplay:forItemAt:)` before adding cells. 
+
+- If  `indexPath.row` is 4 less than the whole data count and if data is not being loaded, `loadMoreData()` is called to fetch more data.
