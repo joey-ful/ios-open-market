@@ -1,8 +1,6 @@
 👆🏻 여기 햄버거를 눌러 목차를 확인하세요
 
-<details>
-<summary> <b> 한국어 README.md 보기 </b> </summary>
-<div markdown="1">
+[English README](https://github.com/joey-ful/ios-open-market#openmarket-project)
 
 # 오픈마켓 프로젝트
 
@@ -555,9 +553,6 @@ URLCache는 request, response를 키값 형태로 저장하기 때문에 이미�
 
 `isNotLoading` Bool타입 프로퍼티를 이용해 현재 추가적인 데이터를 더 로딩중인지 아닌지를 체크하고, `indexPath.row`가 전체 데이터보다 4개정도 적을 때 data를 추가로 fetch하도록 `loadMoreData()` 메서드를 구현했다.
 
-</div>
-</details>
-<br>
   
 # OpenMarket Project
 
