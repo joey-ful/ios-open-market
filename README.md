@@ -435,16 +435,13 @@ NSCache는 흔히 생성 비용이 크지만 단기적으로만 필요한 객체
 > [To `NSCache` or not to `NSCache`, what is the `URLCache`](https://medium.com/@master13sust/to-nscache-or-not-to-nscache-what-is-the-urlcache-35a0c3b02598)
 > [Swift: Loading Images Asynchronously and storing with NSCache and NSURLCache](https://www.youtube.com/watch?v=BIgqHLTZ_a4)
 
+#### 성능 비교
+
 URLCache도 잘 작동되는지 확인하기 위해 셀마다 용량이 평균 2MB의 매우 큰 이미지를 로딩하도록 구현해봤다. 결론은, NSCache는 잘 작동되는 반면 URLCache는 캐싱이 잘 되는데도 화면이 매우 버벅거렸다.
 
-#### NSCache
-
-NSCache는 용량이 큰 이미지들도 캐싱이 잘 되어 스크롤이 매끄럽다.
-
-<img src="https://user-images.githubusercontent.com/52592748/130787527-ec399933-7ab7-4519-b0f2-019cab06d6d3.gif"/>
-
-
-#### URLCache
+| NSCache                                                      | URLCache                                                     |
+| ------------------------------------------------------------ | ------------------------------------------------------------ |
+| <img src="https://user-images.githubusercontent.com/52592748/130787527-ec399933-7ab7-4519-b0f2-019cab06d6d3.gif"/> | <img src="https://user-images.githubusercontent.com/52592748/130786012-d97761de-741b-43e3-b38e-ef1300700313.gif"/> |
 
 <details>
 <summary> <b> 구현 방법 </b>  </summary>
